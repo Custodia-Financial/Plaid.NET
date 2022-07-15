@@ -333,6 +333,16 @@ namespace Acklann.Plaid
 
 		/* ***** */
 
+		/// <summary>
+		///  Exchanges a Link access_token for an Stripe API stripe_bank_account_token.
+		/// </summary>
+		/// <param name="request">The request.</param>
+		/// <returns>Task&lt;Management.StripeTokenResponse&gt;.</returns>
+		public Task<Management.ProcessorTokenResponse> CreateProcessorToken(Management.ProcessorTokenRequest request)
+		{
+			return PostAsync<Management.ProcessorTokenResponse>("/processor/token/create", request);
+		}
+
 		internal async Task<TResponse> PostAsync<TResponse>(string path, SerializableContent request) where TResponse : ResponseBase, new()
 		{
 			SetCredentials(request);
