@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.IO;
 using System.Net.Http;
@@ -13,6 +12,7 @@ namespace Acklann.Plaid
 	/// </summary>
 	public class PlaidClient
 	{
+		private static readonly HttpClient Client = new HttpClient();
 		/// <summary>
 		/// Initializes a new instance of the <see cref="PlaidClient"/> class.
 		/// </summary>
@@ -32,10 +32,9 @@ namespace Acklann.Plaid
 		/// Initializes a new instance of the <see cref="PlaidClient"/> class.
 		/// </summary>
 		/// <param name="options">The options.</param>
-		/// <param name="factory">The factory.</param>
 		/// <param name="logger">The logger.</param>
-		public PlaidClient(PlaidOption options, IHttpClientFactory factory, ILogger logger) :
-			this(options?.ClientId, options?.Secrets, options?.AccessToken, options.EnvironmentName, options?.Version, factory, logger)
+		public PlaidClient(PlaidOption options, ILogger logger) :
+			this(options?.ClientId, options?.Secrets, options?.AccessToken, options.EnvironmentName, options?.Version, logger)
 		{
 		}
 
@@ -47,14 +46,12 @@ namespace Acklann.Plaid
 		/// <param name="accessToken">The access token.</param>
 		/// <param name="environment">The environment.</param>
 		/// <param name="apiVersion">The Plaid API version.</param>
-		/// <param name="factory">The factory.</param>
 		/// <param name="logger">The logger.</param>
 		public PlaidClient(string clientId,
 						   string secret,
 						   string accessToken,
 						   Plaid.Environment environment = Plaid.Environment.Production,
 						   string apiVersion = "2020-09-14",
-						   IHttpClientFactory factory = default,
 						   ILogger logger = default)
 		{
 			_secret = secret;
@@ -63,11 +60,6 @@ namespace Acklann.Plaid
 			_environment = environment;
 			_apiVersion = apiVersion;
 			_logger = logger;
-
-			_httpClientFactory = factory ?? new ServiceCollection()
-				.AddHttpClient()
-				.BuildServiceProvider()
-				.GetService<IHttpClientFactory>();
 
 			string subDomain = _environment switch
 			{
@@ -356,8 +348,7 @@ namespace Acklann.Plaid
 			WriteToDebugger(requestData, $"POST: '{endpoint}'");
 			_logger?.LogTrace("Sent http request. POST: {0}\r\n{1}", endpoint, requestData);
 
-			HttpClient http = _httpClientFactory.CreateClient();
-			using (HttpResponseMessage response = await http.PostAsync(endpoint, body))
+			using (HttpResponseMessage response = await Client.PostAsync(endpoint, body))
 			{
 #if DEBUG
 				requestData = await response.Content.ReadAsStringAsync();
@@ -379,7 +370,7 @@ namespace Acklann.Plaid
 		private readonly string _baseUrl;
 		private readonly ILogger _logger;
 		private readonly Plaid.Environment _environment;
-		private readonly IHttpClientFactory _httpClientFactory;
+		private readonly HttpClient _httpClient;
 		private readonly string _clientId, _secret, _accessToken, _apiVersion;
 
 		private readonly JsonSerializer _serializer = new JsonSerializer
